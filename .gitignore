@@ -1,0 +1,8 @@
+# CodeBlocks
+*.cbp
+*.depend
+bin/*
+obj/*
+
+# Executables
+*.exe
