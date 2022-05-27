@@ -1,5 +1,5 @@
 # Sokkuri
-Sokkuri means "indistinguishable" or "dead ringer".  
+"そっくり" means "indistinguishable" or "dead ringer".  
 Sokkuri will find duplicate files through hashing.
 
 ## Current Stage
