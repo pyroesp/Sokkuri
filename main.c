@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
     int i, j, k;
     clock_t timeout = 5 * CLOCKS_PER_SEC;
     t = clock();
-    printf("Hashing files:\n");
+    printf("Hashing files: ");
     for (i = 0; i < size_of_file; i++){
         if (!strcmp(f[i].ext, "jpg") || !strcmp(f[i].ext, "JPG") || !strcmp(f[i].ext, "png") || !strcmp(f[i].ext, "PNG") || !strcmp(f[i].ext, "jpeg") || !strcmp(f[i].ext, "JPEG")){
             file_Open(&f[i]);
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
         }
     }
     printf("\n\tHashing done...\n");
-    printf("Writing to output file:\n");
+    printf("Writing to output file: ");
     fprintf(out, "path, name, hash\n");
     for (i = 0; i < size_of_file; i++){
         if (!strcmp(f[i].ext, "jpg") || !strcmp(f[i].ext, "JPG") || !strcmp(f[i].ext, "png") || !strcmp(f[i].ext, "PNG") || !strcmp(f[i].ext, "jpeg") || !strcmp(f[i].ext, "JPEG")){
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]){
     int *found;
     found = (int*)malloc(sizeof(int) * size_of_file);
     memset(found, 0, sizeof(int) * size_of_file);
-    printf("Writing duplicates to file:\n");
+    printf("Writing duplicates to file: ");
     fprintf(sokkuri, "path, name, hash\n");
     for (i = 0; i < size_of_file; i++){
         for (j = i + 1; j < size_of_file; j++){
@@ -113,11 +113,25 @@ int main(int argc, char* argv[]){
             t = clock();
         }
     }
+    printf("\n\tDuplicate file written...\n");
 
-    uint32_t s = 0;
+    float s = 0;
+    char u = 0;
     for (i = 0; i < size_of_file; i++)
         s += f[i].data_size;
-    printf("Finished hashing %d files of total size %dB\n", size_of_file, s);
+
+    if (s > 1000000000.0){
+        u = 'G';
+        s = s / 1000000000.0;
+    }
+    else if (s > 1000000.0){
+        u = 'M';
+        s = s / 1000000.0;
+    }else if (s > 1000.0){
+        u = 'k';
+        s = s / 1000.0;
+    }
+    printf("Finished hashing %d files of total size %0.2f%cB\n", size_of_file, s, u);
 
     printf("Cleaning up:\n");
     for (i = 0; i < size_of_file; i++){
