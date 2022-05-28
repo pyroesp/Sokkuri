@@ -60,7 +60,7 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
                 sprintf(path, "%s\\%s", dir, fdFile.cFileName);
                 f = file_GetList(f, size_of_files, path);
             }else{ // if file
-                printf("%s / %s\n", dir, fdFile.cFileName);
+                //printf("%s / %s\n", dir, fdFile.cFileName);
                 f = file_Add(f, size_of_files, fdFile.cFileName, dir);
             }
         }
@@ -114,7 +114,6 @@ void file_Close(s_File *f){
 void file_Free(s_File *f, int size_of_files){
     int i;
     for (i = 0; i < size_of_files; i++){
-        printf("Freeing file[%d] - %s\n", i, f[i].name);
         if (f[i].path)
             free(f[i].path);
         if (f[i].name)
