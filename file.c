@@ -11,10 +11,10 @@ void file_Init(s_File *f){
 
 void file_SetName(s_File *f, char *name){
     if (f && name){
-        f->name = (char*)malloc(sizeof(char) * strlen(name));
+        f->name = (char*)malloc(sizeof(char) * (strlen(name) + 1));
         strcpy(f->name, name);
         char *ext = strrchr(name, '.') + 1;
-        f->ext = (char*)malloc(sizeof(char) * strlen(ext));
+        f->ext = (char*)malloc(sizeof(char) * (strlen(ext) + 1));
         strcpy(f->ext, ext);
     }
 }
@@ -22,7 +22,7 @@ void file_SetName(s_File *f, char *name){
 
 void file_SetPath(s_File *f, char *path){
     if (f && path){
-        f->path = (char*)malloc(sizeof(char) * strlen(path));
+        f->path = (char*)malloc(sizeof(char) * (strlen(path) + 1));
         strcpy(f->path, path);
     }
 }
