@@ -7,3 +7,6 @@ obj/*
 
 # Executables
 *.exe
+
+# Other
+*.txt
