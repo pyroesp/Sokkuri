@@ -11,6 +11,10 @@ Sokkuri will find duplicate files through hashing.
   
 - TODO: Hash using multithreading
 
+## Dependencies
+This program uses the WIN API to get a list of files from folders and subfolders.  
+I don't have/own mac/linux OS to try and implement it there. Feel free to make a PR for that.  
+
 ## Credits
 <a href="https://twitter.com/obskyr/">**@obskyr**</a> for his help finding a kick-ass repo name.  
 
