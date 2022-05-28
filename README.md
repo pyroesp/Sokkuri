@@ -11,6 +11,10 @@ Sokkuri will find duplicate files through hashing.
   
 - TODO: Hash using multithreading
 
+## Hashed files
+For now I've hardcoded that only jpg/jpeg/png files would be hashed as that was my use case.  
+I do intend to change that in the future to allow any file to be hashed.  
+
 ## Dependencies
 This program uses the WIN API to get a list of files from folders and subfolders.  
 I don't have/own mac/linux OS to try and implement it there. Feel free to make a PR for that.  
