@@ -2,18 +2,21 @@
 "そっくり" means "indistinguishable" or "dead ringer".  
 Sokkuri will find duplicate files through hashing.
 
-## Current Stage
+## Current Stage: Working
 - Getting file list
 - SHA256 library tested
+- Added multithreading
 - Create a CSV file, out.txt, with path/name/hash
 - Create a CSV file, sokkuri.txt, with only duplicate files
 - Cleanup ok  
-  
-- TODO: Hash using multithreading
 
 ## Hashed files
 For now I've hardcoded that only jpg/jpeg/png files would be hashed as that was my use case.  
 I do intend to change that in the future to allow any file to be hashed.  
+
+## How to use
+Run the program as follows:
+> sokkuri.exe "C:\root\folder"
 
 ## Dependencies
 This program uses the WIN API to get a list of files from folders and subfolders.  
