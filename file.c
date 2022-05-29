@@ -70,14 +70,14 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
     return f;
 }
 
+
 void file_PrintList(s_File *f, int size){
     if (f){
         int i;
         for (i = 0; i < size; i++)
-            printf("\t%s / %s - %s\n", f[i].path, f[i].name, f[i].ext);
+            printf("\t%d) %s / %s - %s\n", i, f[i].path, f[i].name, f[i].ext);
     }
 }
-
 
 
 void file_Open(s_File *f){
@@ -121,5 +121,4 @@ void file_Free(s_File *f, int size_of_files){
         if (f[i].ext)
             free(f[i].ext);
     }
-    free(f);
 }
