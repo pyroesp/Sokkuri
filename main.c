@@ -8,6 +8,7 @@
 #include "sha-256.h"
 #include "thread.h"
 
+
 #define SIZE_PATH 512
 
 
@@ -19,9 +20,12 @@ int main(int argc, char* argv[]){
     s_File *f = NULL;
     clock_t start = clock();
 
+    if (argc != 2)
+        return -1;
+
     root_dir = (char*)malloc(sizeof(char) * SIZE_PATH);
     memset(root_dir, 0, sizeof(char) * SIZE_PATH);
-    strncpy(root_dir, "Z:\\Pictures", SIZE_PATH);
+    strncpy(root_dir, argv[1], SIZE_PATH);
 
     out = fopen("out.txt", "w+");
     sokkuri = fopen("sokkuri.txt", "w+");
@@ -160,16 +164,16 @@ int main(int argc, char* argv[]){
     for (i = 0; i < size_of_file; i++)
         s += f[i].data_size;
 
-    if (s > 1000000000.0){
+    if (s > 1e9){
         u = 'G';
-        s = s / 1000000000.0;
+        s = s / 1e9;
     }
-    else if (s > 1000000.0){
+    else if (s > 1e6){
         u = 'M';
-        s = s / 1000000.0;
-    }else if (s > 1000.0){
+        s = s / 1e6;
+    }else if (s > 1e3){
         u = 'k';
-        s = s / 1000.0;
+        s = s / 1e3;
     }
     printf("Finished hashing %d files of total size %0.2f%cB in %0.2fs.\n", size_of_file, s, u, (float)(clock() - start)/CLOCKS_PER_SEC);
 
