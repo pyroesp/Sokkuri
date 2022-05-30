@@ -17,14 +17,18 @@
 #define SIG0(x)     (ROTR(x,7) ^ ROTR(x,18) ^ ((x) >> 3))
 #define SIG1(x)     (ROTR(x,17) ^ ROTR(x,19) ^ ((x) >> 10))
 
+// structure for SHA256 digest
 typedef struct{
     uint32_t *digest;
 }s_SHA256_Digest;
 
+// Prepare data for hashing
+// Data must be a multiple of 512 bits, with termination bit and data length
 uint8_t* sha256_PrepareData(uint8_t *data, uint32_t *size);
+// Prepare W message
 void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint32_t size);
+// Execute SHA256 algorithm on data
 uint32_t* sha256_Transform(uint8_t *data, uint32_t size);
-
 
 
 #endif // _SHA_256_H

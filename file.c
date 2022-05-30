@@ -32,10 +32,10 @@ s_File* file_Add(s_File *f, int *size_of_files, char *name, char *path){
     if (f == NULL){ // if null / doesn't exist
         f = (s_File*)malloc(sizeof(s_File)); // create new file with malloc
     }else{ // if file array already exists
-        f = (s_File*)realloc(f, (*size_of_files) * sizeof(s_File)); // reallocate
+        f = (s_File*)realloc(f, (*size_of_files) * sizeof(s_File)); // realloc
     }
 
-    file_Init(&f[(*size_of_files) - 1]); // memset new s_File to 0
+    file_Init(&f[(*size_of_files) - 1]); // memset new file to 0
     file_SetName(&f[(*size_of_files) - 1], name); // copy name to new file
     file_SetPath(&f[(*size_of_files) - 1], path); // copy path to new file
 
@@ -58,9 +58,8 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
         if (strcmp(".", fdFile.cFileName) != 0 && strcmp("..", fdFile.cFileName) != 0){
             if (fdFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){ // if folder
                 sprintf(path, "%s\\%s", dir, fdFile.cFileName);
-                f = file_GetList(f, size_of_files, path);
+                f = file_GetList(f, size_of_files, path); // recursive through subfolders
             }else{ // if file
-                //printf("%s / %s\n", dir, fdFile.cFileName);
                 f = file_Add(f, size_of_files, fdFile.cFileName, dir);
             }
         }
@@ -89,25 +88,26 @@ void file_Open(s_File *f){
     strcat(file_path, "\\");
     strcat(file_path, f->name);
 
+    // open file as read only binary
     fp = fopen(file_path, "rb");
     if (!fp)
         return;
 
-    fseek(fp, 0, SEEK_END);
-    size = ftell(fp);
-    f->data = (uint8_t*)malloc(sizeof(uint8_t) * size);
+    fseek(fp, 0, SEEK_END); // seek end
+    size = ftell(fp); // get size
+    f->data = (uint8_t*)malloc(sizeof(uint8_t) * size); // malloc file data
     if (!f->data)
         return;
     f->data_size = size;
-    rewind(fp);
-    fread(f->data, sizeof(uint8_t), size, fp);
-    fclose(fp);
+    rewind(fp); // rewind file
+    fread(f->data, sizeof(uint8_t), size, fp); // read data
+    fclose(fp); // close file
 }
 
 
 void file_Close(s_File *f){
     if (f)
-        free(f->data);
+        free(f->data); // free file data
 }
 
 

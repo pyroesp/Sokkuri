@@ -15,63 +15,63 @@
 int main(int argc, char* argv[]){
     int i, j, k;
     int size_of_file = 0;
-    char *root_dir = NULL;
     FILE *out, *sokkuri;
     s_File *f = NULL;
-    clock_t start = clock();
+    clock_t start = clock(); // get value of clock at start of program
 
+    // root directory needs to be set as program argument
     if (argc != 2)
         return -1;
 
-    root_dir = (char*)malloc(sizeof(char) * SIZE_PATH);
-    memset(root_dir, 0, sizeof(char) * SIZE_PATH);
-    strncpy(root_dir, argv[1], SIZE_PATH);
-
+    // create the output file that will contain the full file list
     out = fopen("out.txt", "w+");
+    // create the duplicate file that will contain only duplicates found
     sokkuri = fopen("sokkuri.txt", "w+");
     if(!out || !sokkuri)
         return -1;
 
     printf("Get list of files:\n");
-    f = file_GetList(NULL, &size_of_file, root_dir);
+    f = file_GetList(NULL, &size_of_file, argv[1]); // Get list of files
     printf("\tFound %d files...\n", size_of_file);
 
     printf("Hashing files: ");
-    s_SHA256_Digest *sha256;
+    s_SHA256_Digest *sha256; // create SHA256 digest
     sha256 = (s_SHA256_Digest*)malloc(sizeof(s_SHA256_Digest) * size_of_file);
     if (!sha256)
         return -1;
     memset(sha256, 0, sizeof(s_SHA256_Digest) * size_of_file);
 
-    s_Thread *t;
+    s_Thread *t; // create thread data
     t = (s_Thread*)malloc(sizeof(s_Thread) * size_of_file);
     if (!t)
         return -1;
     memset(t, 0, sizeof(s_Thread) * size_of_file);
 
-    HANDLE *hThread;
+    HANDLE *hThread; // create thread handle (windows thing)
     hThread = (HANDLE*)malloc(sizeof(HANDLE) * MAX_THREADS);
     if (!hThread)
         return -1;
     memset(hThread, 0, sizeof(HANDLE) * MAX_THREADS);
 
+    // set the thread data
     for (i = 0; i < size_of_file; i++){
         t[i].f = &f[i];
         t[i].d = &sha256[i];
     }
 
+    // use clock stuff to print dots during hashing so we know the program is still running
     clock_t timeout = 5 * CLOCKS_PER_SEC;
     clock_t ct = clock();
-    for (i = 0; i < size_of_file;){
-        for (j = 0; j < MAX_THREADS && i < size_of_file; j++){
-            switch (WaitForSingleObject(hThread[j], 0)){
-                case WAIT_TIMEOUT:
+    for (i = 0; i < size_of_file;){ // loop for all files
+        for (j = 0; j < MAX_THREADS && i < size_of_file; j++){ // loop through all threads
+            switch (WaitForSingleObject(hThread[j], 0)){ // check if thread is busy
+                case WAIT_TIMEOUT: // if busy do nothing
                     break;
-                case WAIT_OBJECT_0:
+                case WAIT_OBJECT_0: // if free or finished
                 default:
-                    hThread[j] = (HANDLE)_beginthread(thread, 0, (void*)&t[i]);
-                    if (hThread[j] != (HANDLE)-1)
-                        i++;
+                    hThread[j] = (HANDLE)_beginthread(thread, 0, (void*)&t[i]); // start new thread
+                    if (hThread[j] != (HANDLE)-1) // if handle returned is valid
+                        i++; // increase file index
                     break;
             }
         }
@@ -83,6 +83,7 @@ int main(int argc, char* argv[]){
         }
     }
 
+    // wait for active threads to finish
     int threads_done = 0;
     while (threads_done < MAX_THREADS){
         for (j = 0; j < MAX_THREADS; j++){
@@ -98,9 +99,9 @@ int main(int argc, char* argv[]){
             }
         }
     }
-
     printf("\n\tHashing done...\n");
 
+    // Write file list to output text file, with their hash
     printf("Writing to output file: ");
     fprintf(out, "path, name, hash\n");
     for (i = 0; i < size_of_file; i++){
@@ -121,31 +122,33 @@ int main(int argc, char* argv[]){
             ct = clock();
         }
     }
-    fclose(out);
+    fclose(out); // close file list output file
     printf("\n\tOutput file written...\n");
 
-    int *found;
+    // Writing duplicates to sokkuri file
+    printf("Writing duplicates to file: ");
+    int *found; // create a list of size size_of_file to use as flag if the associated file index has already been found
     found = (int*)malloc(sizeof(int) * size_of_file);
     memset(found, 0, sizeof(int) * size_of_file);
-    printf("Writing duplicates to file: ");
     fprintf(sokkuri, "path, name, hash\n");
-    for (i = 0; i < size_of_file; i++){
-        for (j = i + 1; j < size_of_file; j++){
-            if (sha256[i].digest && sha256[j].digest && !found[j]){
-                if (!memcmp(sha256[i].digest, sha256[j].digest, sizeof(uint32_t) * SHA_HASH_SIZE)){
-                    if (!found[i]){
-                        fprintf(sokkuri, "%s, %s, ", f[i].path, f[i].name);
+    for (i = 0; i < size_of_file; i++){ // loop through all files
+        for (j = i + 1; j < size_of_file; j++){ // loop through all files starting from i + 1
+            if (sha256[i].digest && sha256[j].digest && !found[j]){ // if digest files exist and file at index j has not been found yet
+                if (!memcmp(sha256[i].digest, sha256[j].digest, sizeof(uint32_t) * SHA_HASH_SIZE)){ // compare hashes between index i and j
+                    if (!found[i]){ // if index i has not been found yet
+                        fprintf(sokkuri, "%s, %s, ", f[i].path, f[i].name); // write path, name and hash of file at index i to the sokkuri txt file
                         for (k = 0; k < SHA_HASH_SIZE; k++)
                             fprintf(sokkuri, "%08X", sha256[i].digest[k]);
                         fprintf(sokkuri, "\n");
-                        found[i] = 1;
+                        found[i] = 1; // set the flag to 1 so we can skip it next time
                     }
 
+                    // write path, name and hash of file at index j to the sokkuri txt file
                     fprintf(sokkuri, "%s, %s, ", f[j].path, f[j].name);
                     for (k = 0; k < SHA_HASH_SIZE; k++)
                         fprintf(sokkuri, "%08X", sha256[j].digest[k]);
                     fprintf(sokkuri, "\n");
-                    found[j] = 1;
+                    found[j] = 1; // set the flag to 1 so we can skip it next time
                 }
             }
         }
@@ -156,9 +159,10 @@ int main(int argc, char* argv[]){
             ct = clock();
         }
     }
-    fclose(sokkuri);
+    fclose(sokkuri); // close file
     printf("\n\tDuplicate file written...\n");
 
+    // get size of processed files to display as end message
     float s = 0;
     char u = 0;
     for (i = 0; i < size_of_file; i++)
@@ -175,8 +179,10 @@ int main(int argc, char* argv[]){
         u = 'k';
         s = s / 1e3;
     }
+    // print statistics: number of files processed, total size, total time to process
     printf("Finished hashing %d files of total size %0.2f%cB in %0.2fs.\n", size_of_file, s, u, (float)(clock() - start)/CLOCKS_PER_SEC);
 
+    // start cleanup of allocated memory
     printf("Cleaning up:\n");
     for (i = 0; i < size_of_file; i++){
         free(sha256[i].digest);
@@ -189,5 +195,6 @@ int main(int argc, char* argv[]){
     free(f);
     printf("\tCleanup done...\n");
 
+    // exit success
     return 0;
 }
