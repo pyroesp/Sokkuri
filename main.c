@@ -190,7 +190,6 @@ int main(int argc, char* argv[]){
     free(sha256);
     free(t);
     free(hThread);
-    free(root_dir);
     file_Free(f, size_of_file);
     free(f);
     printf("\tCleanup done...\n");
