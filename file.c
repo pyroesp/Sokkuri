@@ -61,6 +61,7 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
                 f = file_GetList(f, size_of_files, path); // recursive through subfolders
             }else{ // if file
                 f = file_Add(f, size_of_files, fdFile.cFileName, dir);
+                f[*size_of_files - 1].data_size = fdFile.nFileSizeHigh * (MAXDWORD - 1) + fdFile.nFileSizeLow;
             }
         }
     }
@@ -81,7 +82,7 @@ void file_PrintList(s_File *f, int size){
 
 void file_Open(s_File *f){
     FILE *fp;
-    uint32_t size;
+    uint64_t size;
     char file_path[512];
 
     strcpy(file_path, f->path);
@@ -93,13 +94,11 @@ void file_Open(s_File *f){
     if (!fp)
         return;
 
-    fseek(fp, 0, SEEK_END); // seek end
-    size = ftell(fp); // get size
+    size = f->data_size;
     f->data = (uint8_t*)malloc(sizeof(uint8_t) * size); // malloc file data
     if (!f->data)
         return;
     f->data_size = size;
-    rewind(fp); // rewind file
     fread(f->data, sizeof(uint8_t), size, fp); // read data
     fclose(fp); // close file
 }

@@ -24,11 +24,11 @@ typedef struct{
 
 // Prepare data for hashing
 // Data must be a multiple of 512 bits, with termination bit and data length
-uint8_t* sha256_PrepareData(uint8_t *data, uint32_t *size);
+uint8_t* sha256_PrepareData(uint8_t *data, uint64_t *size);
 // Prepare W message
-void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint32_t size);
+void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint64_t size);
 // Execute SHA256 algorithm on data
-uint32_t* sha256_Transform(uint8_t *data, uint32_t size);
+uint32_t* sha256_Transform(uint8_t *data, uint64_t size);
 
 
 #endif // _SHA_256_H

@@ -28,9 +28,9 @@ const uint32_t hash[SHA_HASH_SIZE] = {
 };
 
 
-uint8_t* sha256_PrepareData(uint8_t *data, uint32_t *size){
-    uint32_t t = *size;
-    uint32_t bit_idx = t;
+uint8_t* sha256_PrepareData(uint8_t *data, uint64_t *size){
+    uint64_t t = *size;
+    uint64_t bit_idx = t;
     uint64_t length = t * 8;
 
     // check if data size is a multiple of 512 bits (or 64 bytes)
@@ -67,9 +67,9 @@ uint8_t* sha256_PrepareData(uint8_t *data, uint32_t *size){
 }
 
 
-void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint32_t size){
-    uint32_t i;
-    uint32_t idx;
+void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint64_t size){
+    uint64_t i;
+    uint64_t idx;
 
     memset(W, 0, 64); // clear W message
     for (i = 0, idx = 0; i < size/4; i++, idx += 4){
@@ -78,13 +78,13 @@ void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint32_t size){
     }
 }
 
-uint32_t* sha256_Transform(uint8_t *data, uint32_t size){
+uint32_t* sha256_Transform(uint8_t *data, uint64_t size){
     uint32_t a, b, c, d, e, f, g, h;
     uint32_t t1, t2;
     uint32_t W[64];
     uint32_t *H; // pointer for starting/final hash
 
-    uint32_t idx, i;
+    uint64_t idx, i;
 
     // malloc hash buffer
     H = (uint32_t*)malloc(sizeof(uint32_t) * SHA_HASH_SIZE);

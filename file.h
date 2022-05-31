@@ -10,7 +10,7 @@ typedef struct{
     char *ext; // file extension
 
     uint8_t *data; // file data
-    uint32_t data_size; // file data size
+    uint64_t data_size; // file data size
 }s_File;
 
 // Create or add a file to the file list
