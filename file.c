@@ -61,7 +61,7 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
                 f = file_GetList(f, size_of_files, path); // recursive through subfolders
             }else{ // if file
                 f = file_Add(f, size_of_files, fdFile.cFileName, dir);
-                f[*size_of_files - 1].data_size = fdFile.nFileSizeHigh * (MAXDWORD - 1) + fdFile.nFileSizeLow;
+                f[*size_of_files - 1].data_size = fdFile.nFileSizeHigh * (MAXDWORD + 1) + fdFile.nFileSizeLow;
             }
         }
     }
