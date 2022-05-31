@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
         return -1;
     memset(sha256, 0, sizeof(s_SHA256_Digest) * size_of_file);
 
-    s_Thread *t; // create thread data
+    s_Thread *t; // create thread data struct
     t = (s_Thread*)malloc(sizeof(s_Thread) * size_of_file);
     if (!t)
         return -1;
@@ -62,17 +62,27 @@ int main(int argc, char* argv[]){
     // use clock stuff to print dots during hashing so we know the program is still running
     clock_t timeout = 5 * CLOCKS_PER_SEC;
     clock_t ct = clock();
-    for (i = 0; i < size_of_file;){ // loop for all files
-        for (j = 0; j < MAX_THREADS && i < size_of_file; j++){ // loop through all threads
-            switch (WaitForSingleObject(hThread[j], 0)){ // check if thread is busy
-                case WAIT_TIMEOUT: // if busy do nothing
-                    break;
-                case WAIT_OBJECT_0: // if free or finished
-                default:
-                    hThread[j] = (HANDLE)_beginthread(thread, 0, (void*)&t[i]); // start new thread
-                    if (hThread[j] != (HANDLE)-1) // if handle returned is valid
-                        i++; // increase file index
-                    break;
+    int *hashing; // create a hashing list of size size_of_file to use as flag if the associated file index is being/has already been hashed
+    hashing = (int*)malloc(sizeof(int) * size_of_file);
+    memset(hashing, 0, sizeof(int) * size_of_file);
+    for (i = 0; i < size_of_file; i++){ // go through all files
+        for (j = i + 1; j < size_of_file; j++){ // go through all files starting at index i
+            if (f[i].data_size == f[j].data_size){ // hash only if size is equal
+                HANDLE *temp; // use temp handle to find free thread
+                if (!hashing[i]){ // check if file at index i already is being/has been hashed
+                    temp = NULL;
+                    while (temp == NULL) // wait to find a free thread
+                        temp = thread_FindUnusedThread(hThread);
+                    *temp = (HANDLE)_beginthread(thread, 0, (void*)&t[i]); // start new thread
+                    hashing[i] = 1; // set the hashing index to 1 so we can skip it next time
+                }
+                if (!hashing[j]){  // check if file at index j already is being/has been hashed
+                    temp = NULL;
+                    while (temp == NULL) // wait to find a free thread
+                        temp = thread_FindUnusedThread(hThread);
+                    *temp = (HANDLE)_beginthread(thread, 0, (void*)&t[j]); // start new thread
+                    hashing[j] = 1; // set the hashing index to 1 so we can skip it next time
+                }
             }
         }
 
@@ -82,23 +92,8 @@ int main(int argc, char* argv[]){
             ct = clock();
         }
     }
-
     // wait for active threads to finish
-    int threads_done = 0;
-    while (threads_done < MAX_THREADS){
-        for (j = 0; j < MAX_THREADS; j++){
-            switch (WaitForSingleObject(hThread[j], 0)){
-                case WAIT_TIMEOUT:
-                    threads_done = 0;
-                    break;
-                case WAIT_OBJECT_0:
-                default:
-                    hThread[j] = (HANDLE)0;
-                    threads_done++;
-                    break;
-            }
-        }
-    }
+    thread_WaitUntilFinished(hThread);
     printf("\n\tHashing done...\n");
 
     // Write file list to output text file, with their hash
@@ -188,6 +183,7 @@ int main(int argc, char* argv[]){
         free(sha256[i].digest);
     }
     free(sha256);
+    free(hashing);
     free(t);
     free(hThread);
     file_Free(f, size_of_file);

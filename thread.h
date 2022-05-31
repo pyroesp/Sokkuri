@@ -18,6 +18,9 @@ typedef struct{
 
 // thread function made as required by _beginthread
 void thread(void *p);
-
+// return pointer to thread handle that is free
+HANDLE* thread_FindUnusedThread(HANDLE *t);
+// wait until all threads finished
+void thread_WaitUntilFinished(HANDLE *t);
 
 #endif // _THREAD_H
