@@ -82,7 +82,6 @@ void file_PrintList(s_File *f, int size){
 
 void file_Open(s_File *f){
     FILE *fp;
-    uint64_t size;
     char file_path[512];
 
     strcpy(file_path, f->path);
@@ -93,20 +92,18 @@ void file_Open(s_File *f){
     fp = fopen(file_path, "rb");
     if (!fp)
         return;
-
-    size = f->data_size;
-    f->data = (uint8_t*)malloc(sizeof(uint8_t) * size); // malloc file data
+    f->data = (uint8_t*)malloc(sizeof(uint8_t) * f->data_size); // malloc file data
     if (!f->data)
         return;
-    f->data_size = size;
-    fread(f->data, sizeof(uint8_t), size, fp); // read data
+    fread(f->data, sizeof(uint8_t), f->data_size, fp); // read data
     fclose(fp); // close file
 }
 
 
 void file_Close(s_File *f){
     if (f)
-        free(f->data); // free file data
+        if (f->data)
+            free(f->data); // free file data
 }
 
 
