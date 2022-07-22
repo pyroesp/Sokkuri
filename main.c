@@ -34,11 +34,12 @@ int main(int argc, char* argv[]){
     f = file_GetList(NULL, &size_of_file, argv[1]); // Get list of files
     printf("\tFound %d files...\n", size_of_file);
 
-    printf("Hashing files: ");
+    printf("Hashing files: \n");
     s_SHA256_Digest *sha256; // create SHA256 digest
     sha256 = (s_SHA256_Digest*)malloc(sizeof(s_SHA256_Digest) * size_of_file);
     if (!sha256)
         return -1;
+    // init struct to 0
     memset(sha256, 0, sizeof(s_SHA256_Digest) * size_of_file);
 
     s_Thread *t; // create thread data struct
@@ -65,9 +66,9 @@ int main(int argc, char* argv[]){
     int *hashing; // create a hashing list of size size_of_file to use as flag if the associated file index is being/has already been hashed
     hashing = (int*)malloc(sizeof(int) * size_of_file);
     memset(hashing, 0, sizeof(int) * size_of_file);
-    for (i = 0; i < size_of_file; i++){ // go through all files
+    for (i = 0; i < size_of_file - 1; i++){ // go through all files
         for (j = i + 1; j < size_of_file; j++){ // go through all files starting at index i
-            if (f[i].data_size == f[j].data_size){ // hash only if size is equal
+            if (f[i].file_size == f[j].file_size){ // hash only if size is equal
                 HANDLE *temp; // use temp handle to find free thread
                 if (!hashing[i]){ // check if file at index i already is being/has been hashed
                     temp = NULL;
@@ -93,23 +94,25 @@ int main(int argc, char* argv[]){
         }
     }
     // wait for active threads to finish
-    thread_WaitUntilFinished(hThread);
-    printf("\n\tHashing done...\n");
-
+    while (thread_WaitUntilFinished(hThread) == 0){
+        if (clock() - ct > timeout){
+            printf(".");
+            ct = clock();
+        }
+    }
+    printf("\tHashing done...\n");
     // Write file list to output text file, with their hash
     printf("Writing to output file: ");
     fprintf(out, "path, name, hash\n");
     for (i = 0; i < size_of_file; i++){
-        if (!strcmp(f[i].ext, "jpg") || !strcmp(f[i].ext, "JPG") || !strcmp(f[i].ext, "png") || !strcmp(f[i].ext, "PNG") || !strcmp(f[i].ext, "jpeg") || !strcmp(f[i].ext, "JPEG")){
-            fprintf(out, "%s, %s, ", f[i].path, f[i].name);
-            for (j = 0; j < SHA_HASH_SIZE; j++){
-                if (sha256[i].digest)
-                    fprintf(out, "%08X", sha256[i].digest[j]);
-                else
-                    fprintf(out, "00000000");
-            }
-            fprintf(out, "\n");
+        fprintf(out, "%s, %s, ", f[i].path, f[i].name);
+        for (j = 0; j < SHA_HASH_SIZE; j++){
+            if (sha256[i].digest)
+                fprintf(out, "%08X", sha256[i].digest[j]);
+            else
+                fprintf(out, "00000000");
         }
+        fprintf(out, "\n");
 
         // print dot
         if (clock() - ct > timeout){
@@ -161,7 +164,7 @@ int main(int argc, char* argv[]){
     float s = 0;
     char u = 0;
     for (i = 0; i < size_of_file; i++)
-        s += f[i].data_size;
+        s += f[i].file_size;
 
     if (s > 1e9){
         u = 'G';
