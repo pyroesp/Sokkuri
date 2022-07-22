@@ -2,15 +2,27 @@
 #define _FILE_H
 
 #include <stdint.h>
+#include <stdio.h>
+
+#define KIBIBYTE 1024
+#define MEBIBYTE 1048576
+#define FILE_MAX_DATA_SIZE (128 * MEBIBYTE)
 
 // file list structure
 typedef struct{
     char *path; // file path
     char *name; // file name
     char *ext; // file extension
+    uint64_t file_size; // total file size
+
+    FILE *fp; // file pointer
+    uint64_t cursor; // current file cursor position
+
+    uint8_t split; // split file flag
+    uint8_t eof; // eof file flag
 
     uint8_t *data; // file data
-    uint64_t data_size; // file data size
+    uint32_t data_size; // data size -> max FILE_MAX_DATA_SIZE
 }s_File;
 
 // Create or add a file to the file list
@@ -28,9 +40,11 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir);
 // Printf the file list
 void file_PrintList(s_File *f, int size);
 
-// Read file to data buffer
+// Open file
 void file_Open(s_File *f);
-// Free file data
+// Read file to data buffer
+void file_Read(s_File *f);
+// Close file
 void file_Close(s_File *f);
 
 // Free file path, name and extension
