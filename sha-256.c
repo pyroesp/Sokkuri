@@ -28,25 +28,25 @@ const uint32_t hash[SHA_HASH_SIZE] = {
 };
 
 
-uint8_t* sha256_PrepareData(uint8_t *data, uint64_t *size){
-    uint64_t t = *size;
+uint8_t* sha256_PrepareData(uint8_t *data, uint32_t *data_size, uint64_t file_size){
+    uint64_t t = *data_size;
     uint64_t bit_idx = t;
-    uint64_t length = t * 8;
+    uint64_t length = file_size * 8;
 
     // check if data size is a multiple of 512 bits (or 64 bytes)
     if ((t % 64) != 0){
         // if not then increase data buffer to be a multiple of 512 bits
         t = t + (64 - (t % 64));
         data = (uint8_t*)realloc(data, sizeof(uint8_t) * t);
-        memset(&data[*size], 0, sizeof(uint8_t) * (t - (*size)));
+        memset(&data[*data_size], 0, sizeof(uint8_t) * (t - (*data_size)));
     }
 
     // check if there's enough space to add termination bit and data length
-    if (t - (*size) <= 8){
+    if (t - (*data_size) <= 8){
         // if not, then increase data buffer with 64 extra bytes
         t += 64;
         data = (uint8_t*)realloc(data, sizeof(uint8_t) * t);
-        memset(&data[*size], 0, sizeof(uint8_t) * 64);
+        memset(&data[*data_size], 0, sizeof(uint8_t) * 64);
     }
 
     // set termination bit at the end of the original data buffer
@@ -62,33 +62,34 @@ uint8_t* sha256_PrepareData(uint8_t *data, uint64_t *size){
     data[t - 8] = (uint8_t)(length >> (7 * 8) & 0xFF);
 
     // change the value of the data buffer to the new size
-    *size = t;
+    *data_size = t;
     return data;
 }
 
 
-void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint64_t size){
+void sha256_PrepareMessage(uint32_t *W, uint8_t *data, uint32_t size){
     uint64_t i;
     uint64_t idx;
 
-    memset(W, 0, 64); // clear W message
+    memset(W, 0, size); // clear W message
     for (i = 0, idx = 0; i < size/4; i++, idx += 4){
         // make 16 32 bit values from the data buffer
         W[i] = (data[idx] << 24) | (data[idx + 1] << 16) | (data[idx + 2] << 8) | data[idx + 3];
     }
 }
 
-uint32_t* sha256_Transform(uint8_t *data, uint64_t size){
+uint32_t* sha256_Transform(uint8_t *data, uint32_t size, uint32_t *H){
     uint32_t a, b, c, d, e, f, g, h;
     uint32_t t1, t2;
     uint32_t W[64];
-    uint32_t *H; // pointer for starting/final hash
 
     uint64_t idx, i;
 
     // malloc hash buffer
-    H = (uint32_t*)malloc(sizeof(uint32_t) * SHA_HASH_SIZE);
-    memcpy(H, hash, sizeof(uint32_t) * SHA_HASH_SIZE);
+    if (H == NULL){
+        H = (uint32_t*)malloc(sizeof(uint32_t) * SHA_HASH_SIZE);
+        memcpy(H, hash, sizeof(uint32_t) * SHA_HASH_SIZE);
+    }
 
     idx = 0;
     while(idx < size){ // loop to hash all data
