@@ -9,10 +9,15 @@ Sokkuri will find duplicate files through hashing.
 - Create a CSV file, out.txt, with path/name/hash
 - Create a CSV file, sokkuri.txt, with only duplicate files
 - Cleanup ok  
+- Split files to 128MiB (see FILE_MAX_DATA_SIZE in file.h)
+- Remove jpg/jpeg/png restriction
 
 ## Hashed files
-For now I've hardcoded that only jpg/jpeg/png files would be hashed as that was my use case.  
-I do intend to change that in the future to allow any file to be hashed.  
+Previously there was a restriction on only hashing jpg/jpeg/png files.  
+Now all files should get hashed.  
+  
+Big files are split into pieces of 128MiB as to not overload the RAM.
+I have the program set to 16 threads (see MAX_THREADS), which would equate to max 2GiB of data in RAM.  
 
 ## How to use
 Run the program as follows:
