@@ -4,6 +4,16 @@
 #include <stdint.h>
 #include <stdio.h>
 
+// Platform detection
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <dirent.h>
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    #include <unistd.h>
+#endif
+
 #define KIBIBYTE 1024
 #define MEBIBYTE 1048576
 #define FILE_MAX_DATA_SIZE (128 * MEBIBYTE)

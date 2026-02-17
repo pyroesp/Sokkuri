@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <windows.h>
-
 
 void file_Init(s_File *f){
     memset(f, 0, sizeof(s_File));
@@ -13,12 +11,16 @@ void file_SetName(s_File *f, char *name){
     if (f && name){
         f->name = (char*)malloc(sizeof(char) * (strlen(name) + 1));
         strcpy(f->name, name);
-        char *ext = strrchr(name, '.') + 1;
-        f->ext = (char*)malloc(sizeof(char) * (strlen(ext) + 1));
-        strcpy(f->ext, ext);
+        char *dot = strrchr(name, '.');
+        if (dot) {
+            f->ext = (char*)malloc(sizeof(char) * (strlen(dot + 1) + 1));
+            strcpy(f->ext, dot + 1);
+        } else {
+            f->ext = (char*)malloc(sizeof(char) * 1);
+            f->ext[0] = '\0';
+        }
     }
 }
-
 
 void file_SetPath(s_File *f, char *path){
     if (f && path){
@@ -39,10 +41,10 @@ s_File* file_Add(s_File *f, int *size_of_files, char *name, char *path){
     file_SetName(&f[(*size_of_files) - 1], name); // copy name to new file
     file_SetPath(&f[(*size_of_files) - 1], path); // copy path to new file
 
-    return f ? f : NULL;
+    return f;
 }
 
-
+#ifdef _WIN32
 s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
     WIN32_FIND_DATA fdFile;
     HANDLE hFind = NULL;
@@ -51,7 +53,7 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
     sprintf(path, "%s\\*.*", dir);
     hFind = FindFirstFile(path, &fdFile);
     if(hFind == INVALID_HANDLE_VALUE)
-        return NULL;
+        return f;
 
     do{
         // first 'file' found is always "." and ".."
@@ -78,7 +80,47 @@ s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
     FindClose(hFind); // close handle
     return f;
 }
-
+#else
+s_File* file_GetList(s_File *f, int *size_of_files, char *dir){
+    DIR *dp;
+    struct dirent *entry;
+    struct stat statbuf;
+    char path[2048];
+    
+    if ((dp = opendir(dir)) == NULL) {
+        return f;
+    }
+    
+    while ((entry = readdir(dp)) != NULL) {
+        // Skip "." and ".."
+        if (strcmp(".", entry->d_name) == 0 || strcmp("..", entry->d_name) == 0)
+            continue;
+            
+        sprintf(path, "%s/%s", dir, entry->d_name);
+        
+        if (stat(path, &statbuf) == -1) {
+            continue;
+        }
+        
+        if (S_ISDIR(statbuf.st_mode)) { // if directory
+            f = file_GetList(f, size_of_files, path); // recursive through subfolders
+        } else { // if regular file
+            f = file_Add(f, size_of_files, entry->d_name, dir);
+            f[*size_of_files - 1].file_size = (uint64_t)statbuf.st_size;
+            
+            // check if file size is bigger than max data size
+            if (f[*size_of_files - 1].file_size > FILE_MAX_DATA_SIZE){
+                f[*size_of_files - 1].data_size = FILE_MAX_DATA_SIZE;
+                f[*size_of_files - 1].split = 1;
+            } else {
+                f[*size_of_files - 1].data_size = f[*size_of_files - 1].file_size;
+            }
+        }
+    }
+    closedir(dp);
+    return f;
+}
+#endif
 
 void file_PrintList(s_File *f, int size){
     if (f){
@@ -88,17 +130,21 @@ void file_PrintList(s_File *f, int size){
     }
 }
 
-
 void file_Open(s_File *f){
     char file_path[512];
     strcpy(file_path, f->path);
+    
+    #ifdef _WIN32
     strcat(file_path, "\\");
+    #else
+    strcat(file_path, "/");
+    #endif
+    
     strcat(file_path, f->name);
 
     // open file as read only binary
     f->fp = fopen(file_path, "rb");
 }
-
 
 void file_Read(s_File *f){
     if (f->fp){
@@ -125,18 +171,24 @@ void file_Read(s_File *f){
                 return;
         }
         // read data
-        fread(f->data, sizeof(uint8_t), f->data_size, f->fp); // read data
-        f->cursor = ftell(f->fp); // get cursor position after read
+        size_t count = fread(f->data, sizeof(uint8_t), f->data_size, f->fp); // read data
+        f->cursor = count; // ftell(f->fp); // get cursor position after read
         if (f->cursor == f->file_size)
             f->eof = 1;
     }
 }
 
-
 void file_Close(s_File *f){
-    fclose(f->fp); // close file
+    if (f->fp) {
+        if (f->data){
+            free(f->data); // free file data
+            f->data = NULL; // reset pointer
+            f->data_size = 0; // set size to 0
+        }
+        fclose(f->fp); // close file
+        f->fp = NULL;
+    }
 }
-
 
 void file_Free(s_File *f, int size_of_files){
     int i;
@@ -147,5 +199,7 @@ void file_Free(s_File *f, int size_of_files){
             free(f[i].name);
         if (f[i].ext)
             free(f[i].ext);
+        if (f[i].data)
+            free(f[i].data);
     }
 }
