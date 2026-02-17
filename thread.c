@@ -1,65 +1,73 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "thread.h"
 
-
+#ifdef _WIN32
 void thread(void *p){
-    s_Thread *t;
-    s_File *f;
-    s_SHA256_Digest *d;
-    // transform void *p pointer to the thread structure
-    t = (s_Thread*)p;
-    f = t->f;
-    d = t->d;
+#else
+void* thread(void *p){
+#endif
+    ThreadObject *to;
+    ThreadData *data;
+    s_File *file;
+    s_SHA256_Digest *sha256;
 
-    file_Open(f); // open file
-    while (f->eof == 0){
-        file_Read(f); // read file to data array
-        if (f->data){ // if data available
-            if (f->eof) // only terminate data when eof found
-                f->data = sha256_PrepareData(f->data, &f->data_size, f->file_size); // prepare data buffer to be a multiple of 512 bits
-            d->digest = sha256_Transform(f->data, f->data_size, d->digest); // execute SHA256 hash on the data
+    // cast void pointer to thread object
+    to = (ThreadObject*)p;
+    data = to->data;
+    file = data->f;
+    sha256 = data->d;
+
+    file_Open(file); // open file
+    while (file->eof == 0){
+        file_Read(file); // read file to data array
+        if (file->data){ // if data available
+            if (file->eof) // only terminate data when eof found
+                file->data = sha256_PrepareData(file->data, &file->data_size, file->file_size); // prepare data buffer to be a multiple of 512 bits
+            sha256->digest = sha256_Transform(file->data, file->data_size, sha256->digest); // execute SHA256 hash on the data
         }
     }
-    file_Close(f); // close file
+    file_Close(file); // close file
 
     // exit and end thread
+    to->finished = 1;
+#ifdef _WIN32
     _endthread();
+#else
+    pthread_exit(NULL);
+#endif
 }
 
 
+int thread_FindUnusedThread(ThreadObject *to){
+    int index = 0;
+    int waiting = 1;
 
-HANDLE* thread_FindUnusedThread(HANDLE *t){
-    int i;
-    for (i = 0; i < MAX_THREADS; i++){ // loop through all threads
-        switch (WaitForSingleObject(t[i], 0)){ // check if thread is busy
-            case WAIT_TIMEOUT: // if busy do nothing
-                break;
-            case WAIT_OBJECT_0: // if free or finished
-            default:
-                return &t[i];
-                break;
+    // wait for object that is not running or is finished
+    do {
+        int running = to[index].running;
+        int finished = to[index].finished;
+
+        if (finished || !running){
+            waiting = 0;
+        }else if (running){
+            index++;
         }
-    }
 
-    return NULL;
+        if (index >= MAX_THREADS)
+            index = 0;
+    }while(waiting == 1);
+    return index;
 }
 
-
-int thread_WaitUntilFinished(HANDLE *t){
+int thread_WaitUntilFinished(ThreadObject *to){
     int i, threads_done = 0;
+
     for (i = 0; i < MAX_THREADS; i++){
-        switch (WaitForSingleObject(t[i], 0)){
-            case WAIT_TIMEOUT:
-                threads_done = 0;
-                break;
-            case WAIT_OBJECT_0:
-            default:
-                t[i] = (HANDLE)0;
-                threads_done++;
-                break;
-        }
+        if (to[i].finished)
+            threads_done++;
     }
 
     return threads_done == MAX_THREADS;
