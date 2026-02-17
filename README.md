@@ -1,5 +1,5 @@
 # Sokkuri
-"そっくり" means "indistinguishable" or "dead ringer".  
+"そっくり" means "indistinguishable".  
 Sokkuri will find duplicate files through hashing.
 
 ## Current Stage: Working
@@ -11,6 +11,7 @@ Sokkuri will find duplicate files through hashing.
 - Cleanup ok  
 - Split files to 128MiB (see FILE_MAX_DATA_SIZE in file.h)
 - Remove jpg/jpeg/png restriction
+- Added Linux support
 
 ## Hashed files
 Previously there was a restriction on only hashing jpg/jpeg/png files.  
@@ -24,8 +25,13 @@ Run the program as follows:
 > sokkuri.exe "C:\root\folder"
 
 ## Dependencies
-This program uses the WIN API to get a list of files from folders and subfolders.  
-I don't have/own mac/linux OS to try and implement it there. Feel free to make a PR for that.  
+This program uses the standard C libraries.  
+For windows it uses WINAPI calls and for linux it uses linux calls.  
+  
+PS: I'm no expert when it comes to programming on linux so there's definitely better ways to add linux support.
+
+## Tested on
+I've tested this on Windows 10, Windows 11 and Linux Mint 22.2.  
 
 ## Credits
 <a href="https://twitter.com/obskyr/">**@obskyr**</a> for his help finding a kick-ass repo name.  
